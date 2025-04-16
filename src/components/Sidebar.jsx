@@ -26,28 +26,28 @@ const Sidebar = () => {
                         <FaHome size={18}/>
                         <span className={`ml-4 md:block ${isOpen ? "block" : "hidden"}`}>Home</span>
                     </li>
-                    <li className="flex items-center p-4 hover:bg-gray-700 cursor-pointer">
+                    <Link to={'/sales'} className="flex items-center p-4 hover:bg-gray-700 cursor-pointer">
                         <FaShoppingCart size={18}/>
                         <span className={`ml-4 md:block ${isOpen ? "block" : "hidden"}`}>Ventas</span>
-                    </li>
+                    </Link>
                     <li className="flex items-center p-4 hover:bg-gray-700 cursor-pointer">
                         <FaBox size={18}/>
                         <span className={`ml-4 md:block ${isOpen ? "block" : "hidden"}`}>Productos</span>
                     </li>
-                    <li className="flex  items-center p-4 hover:bg-gray-700 cursor-pointer">
+                    <Link to={'/login'} className="flex  items-center p-4 hover:bg-gray-700 cursor-pointer">
                         <FaSignInAlt size={18}/>
                         <span className={`ml-4 md:block ${isOpen ? "block" : "hidden"}`}>Login</span>
-                    </li>
+                    </Link>
 
                 </ul>
             </nav>
         </div>
         {/* Dashboard */}
-        <div className='ml-20 md:ml-64 p-8 bg-gray-100 min-h-screen flex-1'>
+        {/* <div className='ml-20 md:ml-64 p-8 bg-gray-100 min-h-screen flex-1'>
             <h2 className='text-2xl font-bold'>Dashboard</h2>
             <p className=''>Dashboard to the right side</p>
 
-        </div>
+        </div> */}
     </div>
   )
 }
