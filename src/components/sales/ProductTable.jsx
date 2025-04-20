@@ -1,59 +1,48 @@
 import React from "react";
+import { X } from "lucide-react";
 
-const ProductTable = ({ selectedProducts }) => {
-  // Generar una fila por cada talle del producto
-  const rows = selectedProducts.flatMap(product =>
-    product.sizes.map(size => ({
-      id: product.id,
-      code: product.code,
-      name: product.name,
-      color: product.color,
-      size: size.size,
-      quantityAvailable: size.quantityAvailable,
-    }))
+const ProductTable = ({ selectedProducts, onDelete }) => {
+  const total = selectedProducts.reduce(
+    (acc, p) => acc + p.price * p.quantity,
+    0
   );
 
-  // Completar hasta 12 filas con vacías
-  const totalRows = [...rows];
-  const emptyCount = Math.max(0, 12 - totalRows.length);
-  for (let i = 0; i < emptyCount; i++) {
-    totalRows.push({ empty: true, id: `empty-${i}` });
-  }
-
   return (
-    <div className="overflow-x-auto shadow-xl rounded-lg">
-      <table className="min-w-full table-auto">
-        <thead>
-          <tr className="bg-gray-200 text-gray-600">
-            <th className="px-4 py-2 text-left">Código</th>
-            <th className="px-4 py-2 text-left">Descripción</th>
-            <th className="px-4 py-2 text-left">Color</th>
-            <th className="px-4 py-2 text-left">Talle</th>
-            <th className="px-4 py-2 text-left">Disponibles</th>
+    <div className="overflow-x-auto mt-4">
+      <table className="min-w-full table-auto border-collapse">
+        <thead className="bg-gray-200 text-gray-700">
+          <tr>
+            <th className="border px-3 py-2 text-left text-xs md:text-sm">Código Barras</th>
+            <th className="border px-3 py-2 text-left text-xs md:text-sm">Descripción</th>
+            <th className="border px-3 py-2 text-left text-xs md:text-sm">Cant.</th>
+            <th className="border px-3 py-2 text-left text-xs md:text-sm">Precio</th>
+            <th className="border px-3 py-2 text-left text-xs md:text-sm">Subtotal</th>
+            <th className="border px-3 py-2 text-center text-xs md:text-sm">Eliminar</th>
           </tr>
         </thead>
         <tbody>
-          {totalRows.map((row, index) => (
-            row.empty ? (
-              <tr key={row.id} className="border-b text-gray-300">
-                <td className="px-4 py-4">—</td>
-                <td className="px-4 py-4">—</td>
-                <td className="px-4 py-4">—</td>
-                <td className="px-4 py-4">—</td>
-                <td className="px-4 py-4">—</td>
-              </tr>
-            ) : (
-              <tr key={`${row.id}-${row.size}`} className="border-b hover:bg-gray-50 transition">
-                <td className="px-4 py-3">{row.code}</td>
-                <td className="px-4 py-3">{row.name}</td>
-                <td className="px-4 py-3">{row.color}</td>
-                <td className="px-4 py-3">{row.size}</td>
-                <td className="px-4 py-3">{row.quantityAvailable}</td>
-              </tr>
-            )
+          {selectedProducts.map((p) => (
+            <tr key={p.id} className="hover:bg-gray-50">
+              <td className="border px-3 py-2 text-sm">{p.code}</td>
+              <td className="border px-3 py-2 text-sm">{p.name}</td>
+              <td className="border px-3 py-2 text-sm">{p.quantity}</td>
+              <td className="border px-3 py-2 text-sm">${p.price.toFixed(2)}</td>
+              <td className="border px-3 py-2 text-sm">
+                ${(p.price * p.quantity).toFixed(2)}
+              </td>
+              <td className="border px-3 py-2 text-center text-sm">
+                <button onClick={() => onDelete(p.id)}>
+                  <X size={16} className="text-red-500 hover:text-red-700" />
+                </button>
+              </td>
+            </tr>
           ))}
         </tbody>
       </table>
+
+      <div className="mt-2 text-right font-bold text-lg">
+        Total: ${total.toFixed(2)}
+      </div>
     </div>
   );
 };

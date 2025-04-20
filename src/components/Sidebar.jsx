@@ -1,55 +1,52 @@
-import { useState } from 'react'
-import {FaHome,FaShoppingCart,FaBox, FaSignInAlt ,FaUserAlt, FaCog, FaBars} from 'react-icons/fa'
-import {IoCloseSharp} from 'react-icons/io5'
-import {Link} from 'react-router-dom'
+import React from 'react';
+import { FaHome, FaShoppingCart, FaBox, FaSignInAlt, FaBars } from 'react-icons/fa';
+import { IoCloseSharp } from 'react-icons/io5';
+import { Link } from 'react-router-dom';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, toggleSidebar }) => (
+  <>
+    {/* Botón hamburguesa sólo en móvil */}
+    <button
+      onClick={toggleSidebar}
+      className="md:hidden fixed top-4 left-4 z-50 text-black bg-white p-2 rounded shadow"
+    >
+      <FaBars size={20} />
+    </button>
 
-    const [isOpen, setIsOpen] = useState(false)
+    {/* Sidebar */}
+    <div
+      className={`
+        fixed top-0 left-0 h-full bg-gray-800 text-white z-40
+        transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0
+        w-48
+      `}
+    >
+      {/* Cerrar sólo en móvil */}
+      <div className="flex justify-end md:hidden p-4">
+        <button onClick={toggleSidebar} className="text-white">
+          <IoCloseSharp size={24} />
+        </button>
+      </div>
 
-
-  return (
-    <div className="flex">
-        <div className={`fixed top-0 left-0 h-full md:w-64 bg-gray-800 transition-width duration-300 text-white
-            ${isOpen ? "w-64" : "w-20"}
-            `}>
-            <div className="flex justify-between items-center p-4">
-                <h2 className={`text-xl font-bold  md:block ${isOpen ? "block" : "hidden"}`}>POS</h2>
-                <button className='block md:hidden' onClick={()=> setIsOpen(!isOpen)}>
-                   {isOpen ? <IoCloseSharp size={18} /> : <FaBars size={18}/> } 
-                </button>
-            </div>
-
-            <nav className="mt-4">
-                <ul>
-                    <li className="flex items-center p-4 hover:bg-gray-700 cursor-pointer">
-                        <FaHome size={18}/>
-                        <span className={`ml-4 md:block ${isOpen ? "block" : "hidden"}`}>Home</span>
-                    </li>
-                    <Link to={'/sales'} className="flex items-center p-4 hover:bg-gray-700 cursor-pointer">
-                        <FaShoppingCart size={18}/>
-                        <span className={`ml-4 md:block ${isOpen ? "block" : "hidden"}`}>Ventas</span>
-                    </Link>
-                    <li className="flex items-center p-4 hover:bg-gray-700 cursor-pointer">
-                        <FaBox size={18}/>
-                        <span className={`ml-4 md:block ${isOpen ? "block" : "hidden"}`}>Productos</span>
-                    </li>
-                    <Link to={'/login'} className="flex  items-center p-4 hover:bg-gray-700 cursor-pointer">
-                        <FaSignInAlt size={18}/>
-                        <span className={`ml-4 md:block ${isOpen ? "block" : "hidden"}`}>Login</span>
-                    </Link>
-
-                </ul>
-            </nav>
-        </div>
-        {/* Dashboard */}
-        {/* <div className='ml-20 md:ml-64 p-8 bg-gray-100 min-h-screen flex-1'>
-            <h2 className='text-2xl font-bold'>Dashboard</h2>
-            <p className=''>Dashboard to the right side</p>
-
-        </div> */}
+      {/* Menú */}
+      <nav className="flex flex-col space-y-2 px-4">
+        <Link to="/"         className="flex items-center py-3 hover:bg-gray-700 rounded">
+          <FaHome className="mr-3" /> Home
+        </Link>
+        <Link to="/sales"    className="flex items-center py-3 hover:bg-gray-700 rounded">
+          <FaShoppingCart className="mr-3" /> Ventas
+        </Link>
+        <Link to="/products" className="flex items-center py-3 hover:bg-gray-700 rounded">
+          <FaBox className="mr-3" /> Productos
+        </Link>
+        <Link to="/login"    className="flex items-center py-3 hover:bg-gray-700 rounded">
+          <FaSignInAlt className="mr-3" /> Login
+        </Link>
+      </nav>
     </div>
-  )
-}
+  </>
+);
 
-export default Sidebar
+export default Sidebar;
