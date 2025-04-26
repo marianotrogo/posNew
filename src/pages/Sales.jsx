@@ -1,155 +1,123 @@
-import React, { useState, useEffect } from 'react';
-import ProductSearch from "../components/sales/ProductSearch";
-import ProductSearchModal from "../components/sales/ProductSearchModal";
-import ProductTable from "../components/sales/ProductTable";
-import { mockProducts } from "../utils/mockData"; // Importar productos desde el mock
+import { useState } from "react";
+import Cliente from "../components/sales/Cliente";
+import FormaDePago from "../components/sales/FormaDePago";
+import BuscadorProductos from "../components/sales/BuscadorProductos";
+import TablaProductos from "../components/sales/TablaProductos";
+import { mockProductos } from "../utils/mockData";
+import ResumenTotal from "../components/sales/ResumenTotal";
 
-const Sales = () => {
-  const [selectedProducts, setSelectedProducts] = useState([]);
+export default function Sales() {
+  const [cliente, setCliente] = useState(null);
+  const [formaPago, setFormaPago] = useState({
+    tipo: "Efectivo",
+    descuento: 0,
+    recargo: 0,
+    totalFinal: 0,
+  });
+  const [productosSeleccionados, setProductosSeleccionados] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [customerName, setCustomerName] = useState(""); // Nombre del cliente
-  const [saleDate, setSaleDate] = useState(""); // Fecha de la venta
-  const [applyDiscount, setApplyDiscount] = useState(false); // Activar descuento
-  const [discountAmount, setDiscountAmount] = useState(0); // Monto de descuento
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Establecer la fecha automáticamente al cargar el componente
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0]; // Obtener la fecha en formato YYYY-MM-DD
-    setSaleDate(today); // Establecer la fecha por defecto como la fecha actual
-  }, []);
+  const toggleModal = () => setShowModal((v) => !v);
 
-  // Agregar producto desde el buscador principal o modal
-  const handleAddProduct = (product, quantity = 1) => {
-    // Si ya existe el producto, solo sumamos la cantidad
-    setSelectedProducts((prev) => {
-      const idx = prev.findIndex(p => p.id === product.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx].quantity += quantity;
-        return copy;
-      }
-      return [...prev, { ...product, quantity }];
-    });
-  };
+  const productosFiltrados = mockProductos.filter(
+    (p) =>
+      p.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Eliminar producto de la selección
-  const handleDelete = (id) => {
-    setSelectedProducts(prev => prev.filter(p => p.id !== id));
-  };
-
-  // Calcular total con descuento
-  const calculateTotal = () => {
-    const subtotal = selectedProducts.reduce(
-      (total, product) => total + product.price * product.quantity,
-      0
-    );
-    let discount = 0;
-    if (applyDiscount) {
-      discount = (subtotal * discountAmount) / 100; // Aplicar descuento en porcentaje
+  const handleSeleccionarProducto = (producto, talle) => {
+    if (
+      productosSeleccionados.some(
+        (x) => x.codigo === producto.codigo && x.talle === talle.talle
+      )
+    ) {
+      alert("Ya agregaste ese producto/talle");
+      return;
     }
-    const total = subtotal - discount;
-    return { subtotal, discount, total };
+    setProductosSeleccionados((prev) => [
+      ...prev,
+      { ...producto, talle: talle.talle, cantidad: 1 },
+    ]);
+    setShowModal(false);
   };
 
-  const { subtotal, discount, total } = calculateTotal();
+  const handleEliminarProducto = (index) => {
+    setProductosSeleccionados((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleConfirmarVenta = () => {
+    const venta = {
+      cliente: cliente,
+      formaPago: formaPago,
+      productos: productosSeleccionados,
+      subtotal: subtotal,
+      fecha: new Date().toISOString(),
+    };
+  
+    console.log("Venta confirmada:", venta);
+  };
+  
+
+  // Total sin ajuste
+  const subtotal = productosSeleccionados.reduce(
+    (acc, prod) => acc + prod.precio * prod.cantidad,
+    0
+  );
 
   return (
-    <div className="container mx-auto p-6 space-y-4">
-      {/* Formulario de venta */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {/* Nombre del cliente */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Nombre del Cliente</label>
-          <input
-            type="text"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            placeholder="Ingrese el nombre del cliente"
-            className="border px-4 py-2 rounded w-full"
-          />
+    <div className="h-screen p-3 flex flex-col gap-1 bg-gray-50">
+      {/* Cliente & Forma de Pago */}
+      <div className="flex gap-4 mb-1">
+        <div className="flex-1 bg-white rounded-lg shadow-md p-3">
+          <Cliente setCliente={setCliente} />
         </div>
-
-        {/* Fecha de venta (texto sin formulario, tamaño reducido) */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Fecha de Venta</label>
-          <div className="border px-4 py-2 rounded bg-gray-100 text-gray-700 inline-block">
-            {saleDate} {/* Mostramos la fecha como texto */}
-          </div>
-        </div>
-
-        {/* Descuento */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            checked={applyDiscount}
-            onChange={(e) => setApplyDiscount(e.target.checked)}
-            className="h-5 w-5"
+        <div className="flex-1 bg-white rounded-lg shadow-md p-6">
+          <FormaDePago
+            total={subtotal}
+            onChange={(pagoActualizado) => setFormaPago(pagoActualizado)}
           />
-          <label className="text-sm">Aplicar descuento</label>
-          {applyDiscount && (
-            <div className="flex items-center space-x-2">
-              <input
-                type="number"
-                value={discountAmount}
-                onChange={(e) => setDiscountAmount(e.target.value)}
-                min="0"
-                max="100"
-                placeholder="Descuento (%)"
-                className="border px-4 py-2 rounded w-20"
-              />
-              <span className="text-sm">%</span> {/* Texto con el símbolo "%" */}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Buscador de productos */}
-      <ProductSearch
-        products={mockProducts}  // Cambié a importar productos reales
-        onAdd={(prod, qty) => handleAddProduct(prod, qty)}
+      {/* Buscador */}
+      <BuscadorProductos
+        productos={productosFiltrados}
+        showModal={showModal}
+        setShowModal={setShowModal}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        onSeleccionarProducto={handleSeleccionarProducto}
       />
 
-      {/* Botón para abrir el modal de búsqueda de productos */}
-      <button
-        onClick={() => setShowModal(true)}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full md:w-auto"
-      >
-        + Buscar productos
-      </button>
-
-      {/* Tabla de productos seleccionados */}
-      <ProductTable
-        selectedProducts={selectedProducts}
-        onDelete={handleDelete}
-      />
-
-      {/* Modal de búsqueda de productos */}
-      <ProductSearchModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        products={mockProducts}  // Cambié a importar productos reales
-        onAdd={(prod) => handleAddProduct(prod, 1)}
-      />
-
-      {/* Detalle de precios */}
-      <div className="mt-6">
-        <div className="flex justify-between">
-          <span className="font-semibold">Subtotal:</span>
-          <span>${subtotal.toFixed(2)}</span>
+      {/* Layout de 2 columnas: Tabla de productos y Resumen */}
+      <div className="flex flex-row h-full">
+        {/* Tabla de productos */}
+        <div className="flex-1 bg-white  shadow-md p-6 overflow-auto">
+          <TablaProductos
+            productosSeleccionados={productosSeleccionados}
+            setProductosSeleccionados={setProductosSeleccionados}
+          />
         </div>
-        {applyDiscount && (
-          <div className="flex justify-between">
-            <span className="font-semibold text-red-600">Descuento ({discountAmount}%):</span>
-            <span className="text-red-600">- ${discount.toFixed(2)}</span>
-          </div>
-        )}
-        <div className="flex justify-between mt-2">
-          <span className="font-semibold text-lg">Total:</span>
-          <span className="text-xl text-green-600">${total.toFixed(2)}</span>
-        </div>
-      </div>
+
+         {/* Resumen total */}
+    <div className="w-1/3 max-w-sm bg-white shadow-lg p-6 border-gray-200">
+      <ResumenTotal
+        productosSeleccionados={productosSeleccionados}
+        formaPago={formaPago}
+      />
+    </div>
+  </div>
+
+  {/* Botón Confirmar Venta (afuera del flex-row) */}
+  <div className="w-full flex justify-end mt-4">
+    <button
+      onClick={handleConfirmarVenta}
+      className="bg-black text-white px-6 py-2 rounded-xl hover:bg-gray-800 transition"
+    >
+      Confirmar Venta
+    </button>
+  </div>
     </div>
   );
-};
-
-export default Sales;
+}
