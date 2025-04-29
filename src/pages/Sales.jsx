@@ -5,6 +5,7 @@ import BuscadorProductos from "../components/sales/BuscadorProductos";
 import TablaProductos from "../components/sales/TablaProductos";
 import { mockProductos } from "../utils/mockData";
 import ResumenTotal from "../components/sales/ResumenTotal";
+import ModalConfirmarVenta from "../components/sales/ConfirmarVenta";
 
 export default function Sales() {
   const [cliente, setCliente] = useState(null);
@@ -17,6 +18,15 @@ export default function Sales() {
   const [productosSeleccionados, setProductosSeleccionados] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [efectivo, setEfectivo] = useState(0);
+  const [otrosMedios, setOtrosMedios] = useState(0);
+
+  // Nuevos estados para tarjeta
+  const [numeroTarjeta, setNumeroTarjeta] = useState("");
+  const [dni, setDni] = useState("");
+  const [tipoTarjeta, setTipoTarjeta] = useState("");
 
   const toggleModal = () => setShowModal((v) => !v);
 
@@ -46,18 +56,36 @@ export default function Sales() {
     setProductosSeleccionados((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleAbrirConfirmarVenta = () => {
+    // Seteamos los valores por defecto
+    setEfectivo(formaPago.totalFinal);
+    setOtrosMedios(0);
+    setShowConfirmModal(true);
+  };
+
   const handleConfirmarVenta = () => {
+    if (efectivo + otrosMedios !== formaPago.totalFinal) {
+      alert("La suma de los pagos no coincide con el total de la venta");
+      return;
+    }
+
     const venta = {
       cliente: cliente,
-      formaPago: formaPago,
+      formaPago: {
+        efectivo: efectivo,
+        otros: otrosMedios,
+        numeroTarjeta,
+        tipoTarjeta,
+        dni,
+      },
       productos: productosSeleccionados,
       subtotal: subtotal,
       fecha: new Date().toISOString(),
     };
-  
+
     console.log("Venta confirmada:", venta);
+    setShowConfirmModal(false);
   };
-  
 
   // Total sin ajuste
   const subtotal = productosSeleccionados.reduce(
@@ -90,34 +118,52 @@ export default function Sales() {
         onSeleccionarProducto={handleSeleccionarProducto}
       />
 
-      {/* Layout de 2 columnas: Tabla de productos y Resumen */}
+      {/* Layout de 2 columnas */}
       <div className="flex flex-row h-full">
-        {/* Tabla de productos */}
-        <div className="flex-1 bg-white  shadow-md p-6 overflow-auto">
+        <div className="flex-1 bg-white shadow-md p-6 overflow-auto">
           <TablaProductos
             productosSeleccionados={productosSeleccionados}
             setProductosSeleccionados={setProductosSeleccionados}
           />
         </div>
 
-         {/* Resumen total */}
-    <div className="w-1/3 max-w-sm bg-white shadow-lg p-6 border-gray-200">
-      <ResumenTotal
-        productosSeleccionados={productosSeleccionados}
-        formaPago={formaPago}
-      />
-    </div>
-  </div>
+        <div className="w-1/3 max-w-sm bg-white shadow-lg p-6 border-gray-200">
+          <ResumenTotal
+            productosSeleccionados={productosSeleccionados}
+            formaPago={formaPago}
+          />
+        </div>
+      </div>
 
-  {/* Botón Confirmar Venta (afuera del flex-row) */}
-  <div className="w-full flex justify-end mt-4">
-    <button
-      onClick={handleConfirmarVenta}
-      className="bg-black text-white px-6 py-2 rounded-xl hover:bg-gray-800 transition"
-    >
-      Confirmar Venta
-    </button>
-  </div>
+      {/* Botón Confirmar Venta */}
+      <div className="w-full flex justify-end mt-4">
+        <button
+          onClick={handleAbrirConfirmarVenta}
+          className="bg-black text-white px-6 py-2 rounded-xl hover:bg-gray-800 transition"
+        >
+          Confirmar Venta
+        </button>
+      </div>
+
+      {/* Modal de Confirmar Venta */}
+      {showConfirmModal && (
+        <ModalConfirmarVenta
+          efectivo={efectivo}
+          setEfectivo={setEfectivo}
+          otrosMedios={otrosMedios}
+          setOtrosMedios={setOtrosMedios}
+          formaPago={formaPago}
+          setFormaPago={setFormaPago}
+          numeroTarjeta={numeroTarjeta}
+          setNumeroTarjeta={setNumeroTarjeta}
+          dni={dni}
+          setDni={setDni}
+          tipoTarjeta={tipoTarjeta}
+          setTipoTarjeta={setTipoTarjeta}
+          onConfirmar={handleConfirmarVenta}
+          onClose={() => setShowConfirmModal(false)}
+        />
+      )}
     </div>
   );
 }
