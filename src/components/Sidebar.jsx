@@ -41,6 +41,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => (
         <Link to="/products" className="flex items-center py-3 hover:bg-gray-700 rounded">
           <FaBox className="mr-3" /> Productos
         </Link>
+        <Link to="/configuracion"    className="flex items-center py-3 hover:bg-gray-700 rounded">
+          <FaSignInAlt className="mr-3" /> Configuracion
+        </Link>
         <Link to="/login"    className="flex items-center py-3 hover:bg-gray-700 rounded">
           <FaSignInAlt className="mr-3" /> Login
         </Link>

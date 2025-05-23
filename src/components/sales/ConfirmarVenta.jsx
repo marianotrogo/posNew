@@ -1,171 +1,193 @@
-import React, { useState, useEffect } from "react";
-import { X, Printer } from "lucide-react";
+import React, { useState } from "react";
 
-export default function ModalIngresarPago({ total = 0, onClose, onSave }) {
-  const [efectivo, setEfectivo] = useState("");
-  const [digitalAmount, setDigitalAmount] = useState("");
-  const [digitalMethod, setDigitalMethod] = useState("");
-  const [cuotas, setCuotas] = useState(1);
-  const [numeroTarjeta, setNumeroTarjeta] = useState("");
-  const [dni, setDni] = useState("");
-  const [tipoTarjeta, setTipoTarjeta] = useState("");
-  const [vuelto, setVuelto] = useState(0);
+export default function ModalConfirmarVenta({
+  efectivo,
+  setEfectivo,
+  formaPago,
+  setFormaPago,
+  numeroTarjeta,
+  setNumeroTarjeta,
+  dni,
+  setDni,
+  totalFinal,
+  onConfirmar,
+  onClose,
+}) {
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const ef = parseFloat(efectivo) || 0;
-    const dig = parseFloat(digitalAmount) || 0;
-    setVuelto(((ef + dig) - total).toFixed(2));
-  }, [efectivo, digitalAmount, total]);
+    // console.log("💰 totalFinal recibido:", totalFinal);
 
-  const handleSave = () => {
-    const data = {
-      efectivo: parseFloat(efectivo) || 0,
-      digital: {
-        method: digitalMethod,
-        amount: parseFloat(digitalAmount) || 0,
-      },
-      cuotas,
-      numeroTarjeta,
-      tipoTarjeta,
-      dni,
-      total,
-      vuelto: parseFloat(vuelto),
-    };
-    console.log("Datos de pago:", data);
-    onSave && onSave(data);
+  // Asegurarse de que efectivo y formaPago.monto sean números válidos
+  const efectivoNum = Number(efectivo) || 0;
+  const montoPago = Number(formaPago.monto) || 0;
+  const totalPagado = efectivoNum + montoPago;
+  
+
+  const handleChangeTarjeta = (e) => {
+    // Solo permite números y máximo 4 dígitos
+    const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+    setNumeroTarjeta(value);
+  };
+
+  const handleFormaPago = (campo, valor) => {
+    setFormaPago((prev) => ({
+      ...prev,
+      [campo]: campo === "monto" ? Number(valor) || "" : valor,
+    }));
+  };
+
+  const validar = () => {
+    if (totalPagado < (Number(totalFinal) || 0)) {
+      setError("El monto total no cubre la venta.");
+      return false;
+    }
+
+    if (
+      ["Crédito", "Débito"].includes(formaPago.tipo) &&
+      numeroTarjeta.length !== 4
+    ) {
+      setError("Ingresá los últimos 4 dígitos de la tarjeta.");
+      return false;
+    }
+
+    if (!dni || dni.length < 7) {
+      setError("El DNI debe tener al menos 7 dígitos.");
+      return false;
+    }
+
+    setError("");
+    return true;
+  };
+
+  const confirmarVenta = () => {
+    if (!validar()) return;
+
+    onConfirmar();
+    setMensaje("✅ Venta realizada con éxito");
+
+    // Limpiar estados
+    setEfectivo("");
+    setFormaPago({ tipo: "", monto: "" });
+    setNumeroTarjeta("");
+    setDni("");
+
+    // Cerrar modal luego de un momento
+    setTimeout(() => {
+      setMensaje("");
+      onClose();
+    }, 1200);
   };
 
   return (
-    // Backdrop: cierra al hacer click fuera del modal
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm"
-      onClick={() => onClose()} // Llamar a onClose cuando se hace clic en el backdrop
-    >
-      {/* Contenedor del modal: evita que el clic burbujee al backdrop */}
-      <div
-        className="bg-white border border-gray-300 rounded-lg shadow-lg w-full max-w-3xl overflow-hidden"
-        onClick={e => e.stopPropagation()} // Prevenir que el clic burbujee
-      >
-        {/* Header */}
-        <div className="bg-blue-400 px-4 py-2 flex justify-between items-center text-white">
-          <h3 className="text-lg font-semibold">Ingresar Pago</h3>
-          <button onClick={() => onClose()}>
-            <X size={20} />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white border border-gray-300 w-full max-w-md p-6 text-sm rounded shadow-lg">
 
-        {/* Total de la Venta */}
-        <div className="flex justify-between items-center px-6 py-4 border-b">
-          <span className="text-lg font-medium">Total de la Venta:</span>
-          <span className="text-xl font-bold">${total.toFixed(2)}</span>
-        </div>
+        {mensaje && (
+          <div className="text-green-600 font-semibold text-right mb-2">
+            {mensaje}
+          </div>
+        )}
 
-        {/* Body */}
-        <div className="p-6 space-y-6">
-          {/* Pago Efectivo */}
-          <div className="flex items-center gap-4">
-            <label className="w-40 text-sm font-medium">Pago EFECTIVO</label>
+        <h2 className="text-base font-semibold text-center mb-4">
+          Total a pagar: ${Number(totalFinal || 0).toFixed(2)}
+        </h2>
+
+        {error && (
+          <div className="text-red-600 font-medium text-center mb-4">
+            ⚠️ {error}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <label className="text-sm">Efectivo:</label>
             <input
               type="number"
-              className="border rounded px-2 py-1 text-sm w-32 focus:outline-none focus:ring focus:ring-blue-300"
+              className="border border-gray-400 px-2 py-1 text-right w-1/2 focus:outline-none"
               value={efectivo}
-              onChange={e => setEfectivo(e.target.value)}
-              placeholder="0.00"
+              onChange={(e) =>
+                setEfectivo(e.target.value === "" ? "" : Number(e.target.value))
+              }
+              placeholder="0"
+              min="0"
             />
           </div>
 
-          {/* Pago Digital */}
-          <div className="flex items-center gap-4">
-            <label className="w-40 text-sm font-medium">Pago Digital</label>
-            <select
-              className="border rounded px-2 py-1 text-sm w-40 focus:outline-none focus:ring focus:ring-blue-300"
-              value={digitalMethod}
-              onChange={e => setDigitalMethod(e.target.value)}
-            >
-              <option>Crédito</option>
-              <option>Débito</option>
-              <option>Transferencia</option>
-              <option>Pago QR</option>
-            </select>
+          <div className="flex justify-between items-center">
+            <label className="text-sm">Pago electrónico:</label>
             <input
               type="number"
-              className="border rounded px-2 py-1 text-sm w-32 focus:outline-none focus:ring focus:ring-blue-300"
-              value={digitalAmount}
-              onChange={e => setDigitalAmount(e.target.value)}
-              placeholder="0.00"
+              className="border border-gray-400 px-2 py-1 text-right w-1/2 focus:outline-none"
+              value={formaPago.monto ?? ""}
+              onChange={(e) => handleFormaPago("monto", e.target.value)}
+              placeholder="0"
+              min="0"
             />
           </div>
 
-          {/* Cuotas, Número de Tarjeta, DNI */}
-          <div className="grid grid-cols-3 gap-6 text-sm">
-            <div className="flex flex-col">
-              <label className="font-medium">Cuotas</label>
-              <select
-                className="border rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
-                value={cuotas}
-                onChange={e => setCuotas(Number(e.target.value))}
-              >
-                {Array.from({ length: 3 }, (_, i) => i + 1).map(n => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col">
-              <label className="font-medium">Número de Tarjeta</label>
-              <input
-                type="text"
-                className="border rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
-                value={numeroTarjeta}
-                onChange={e => setNumeroTarjeta(e.target.value)}
-                placeholder="1234 5678 9012 3456"
-              />
-            </div>
-
-            <div className="flex flex-col">
-              <label className="font-medium">DNI</label>
-              <input
-                type="text"
-                className="border rounded px-2 py-1 focus:outline-none focus:ring focus:ring-blue-300"
-                value={dni}
-                onChange={e => setDni(e.target.value)}
-                placeholder="Número"
-              />
-            </div>
+          <div className="flex justify-between items-center">
+            <label className="text-sm">Tipo de pago:</label>
+            <select
+              className="border border-gray-400 px-2 py-1 w-1/2 focus:outline-none bg-white"
+              value={formaPago.tipo}
+              onChange={(e) => handleFormaPago("tipo", e.target.value)}
+            >
+              <option value="">Seleccionar</option>
+              <option value="Crédito">Tarjeta Crédito</option>
+              <option value="Débito">Tarjeta Débito</option>
+              <option value="Transferencia">Transferencia</option>
+            </select>
           </div>
 
-          {/* Tipo de Tarjeta */}
-          <div className="flex flex-col gap-2 text-sm">
-            <label className="font-medium">Tipo de Tarjeta</label>
+          {["Crédito", "Débito"].includes(formaPago.tipo) && (
+            <div className="flex justify-between items-center">
+              <label className="text-sm">Últimos 4 dígitos:</label>
+              <input
+                type="text"
+                className="border border-gray-400 px-2 py-1 text-right w-1/2 focus:outline-none"
+                value={numeroTarjeta}
+                onChange={handleChangeTarjeta}
+                placeholder="1234"
+                maxLength={4}
+              />
+            </div>
+          )}
+
+          <div className="flex justify-between items-center">
+            <label className="text-sm">DNI:</label>
             <input
               type="text"
-              className="border rounded px-2 py-1 w-1/3 focus:outline-none focus:ring focus:ring-blue-300"
-              value={tipoTarjeta}
-              onChange={e => setTipoTarjeta(e.target.value)}
-              placeholder="Visa, Mastercard..."
+              className="border border-gray-400 px-2 py-1 text-right w-1/2 focus:outline-none"
+              value={dni}
+              onChange={(e) => setDni(e.target.value.replace(/\D/g, ""))}
+              placeholder="Documento"
+              maxLength={10}
             />
           </div>
-
-          {/* Vuelto */}
-          <div className="flex justify-end items-center gap-4 mt-4">
-            <span className="text-sm font-medium">VUELTO:</span>
-            <span className="text-lg font-semibold text-green-600">${vuelto}</span>
-          </div>
+{/* 
+          {cambio > 0 && (
+            <div className="text-green-700 font-medium text-right mt-2">
+              Cambio: ${cambio.toFixed(2)}
+            </div>
+          )} */}
         </div>
 
-        {/* Footer: Cerrar + Guardar */}
-        <div className="px-6 py-4 border-t flex justify-end gap-4 bg-gray-50">
+        <div className="flex justify-between mt-6">
           <button
-            onClick={() => onClose()}
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm"
+            className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 transition-colors text-sm"
+            onClick={onClose}
+            type="button"
           >
-            Cerrar
+            Cancelar
           </button>
           <button
-            onClick={handleSave}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+            className="px-4 py-1 bg-black text-white hover:bg-neutral-800 transition-colors text-sm"
+            onClick={confirmarVenta}
+            disabled={!!mensaje}
+            type="button"
           >
-            <Printer size={16} /> Guardar e Imprimir
+            Confirmar
           </button>
         </div>
       </div>

@@ -1,113 +1,192 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { X } from "lucide-react";
+import axios from "../../api/axios";
 
-export default function BuscadorModal({
-  productos,
-  onSeleccionarProducto,
-  onClose,
-  searchTerm,
-  setSearchTerm,
-}) {
-  const inputRef = useRef(null);
+const BuscarModal = ({ onClose, onSeleccionarProducto }) => {
+  const [productos, setProductos] = useState([]);
+  const [error, setError] = useState("");
+  const [codigoFiltro, setCodigoFiltro] = useState("");
+  const [colorFiltro, setColorFiltro] = useState("");
+  const [nombreFiltro, setNombreFiltro] = useState("");
+  const modalRef = useRef();
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
 
-  const filtrados = productos.filter((p) => {
-    const c = p.codigo?.toLowerCase() || "";
-    const d = p.descripcion?.toLowerCase() || "";
-    const term = searchTerm.toLowerCase();
-    return c.startsWith(term) || d.startsWith(term);
-  });
+  const buscarProductos = async () => {
+    if (!codigoFiltro && !colorFiltro && !nombreFiltro) {
+      setProductos([]);
+      return;
+    }
+
+    try {
+      const { data } = await axios.get("/productos");
+      const filtrados = data.filter((p) =>
+        (codigoFiltro ? p.codigo.includes(codigoFiltro) : true) &&
+        (colorFiltro ? p.color.toLowerCase().includes(colorFiltro.toLowerCase()) : true) &&
+        (nombreFiltro ? p.descripcion.toLowerCase().includes(nombreFiltro.toLowerCase()) : true)
+      );
+      setProductos(filtrados);
+      setError("");
+    } catch (err) {
+      console.error(err);
+      setError("Error al obtener productos");
+    }
+  };
+
+  const limpiarFiltros = () => {
+    setCodigoFiltro("");
+    setColorFiltro("");
+    setNombreFiltro("");
+    setProductos([]);
+    setError("");
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[90%] max-w-4xl h-[80vh] relative shadow-xl flex flex-col">
-        
-        {/* Botón cerrar esquina */}
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div
+        ref={modalRef}
+        className="relative bg-white rounded-lg w-full max-w-6xl h-[90vh] p-4 overflow-hidden"
+      >
+        {/* Cerrar */}
         <button
-          onClick={()=>{
-            setSearchTerm("");
-            onClose();
-          }}
-          className="absolute top-4 right-4 text-gray-600 hover:text-black text-3xl font-bold"
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-600 hover:text-black"
         >
-          &times;
+          <X size={20} />
         </button>
 
-        {/* Input búsqueda */}
-        <input
-          ref={inputRef}
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Código o descripción"
-          className="w-3xl border rounded-lg p-3 mb-4 text-lg"
-        />
+        <h2 className="text-lg font-semibold mb-4">Buscar Producto</h2>
 
-        {/* Contenido con scroll interno */}
-        <div className="flex-1 overflow-y-auto">
-          {searchTerm === "" ? (
-            <p className="text-center text-gray-500 py-20">
-              Empieza a escribir para buscar…
-            </p>
-          ) : filtrados.length === 0 ? (
-            <p className="text-center text-gray-500 py-20">
-              No se encontraron coincidencias
-            </p>
-          ) : (
-            <table className="w-full table-auto text-sm">
-              <thead className="bg-gray-100 sticky top-0">
-                <tr>
-                  <th className="px-4 py-2 text-left">Desc.</th>
-                  <th className="px-4 py-2 text-left">Cód.</th>
-                  <th className="px-4 py-2 text-left">Color</th>
-                  <th className="px-4 py-2 text-left">Talle</th>
-                  <th className="px-4 py-2 text-left">Stock</th>
-                  <th className="px-4 py-2 text-left">Precio</th>
-                  <th className="px-4 py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtrados.map((p) =>
-                  p.talles.map((t) => (
-                    <tr key={`${p.codigo}-${t.talle}`} className="hover:bg-gray-50">
-                      <td className="px-4 py-2">{p.descripcion}</td>
-                      <td className="px-4 py-2">{p.codigo}</td>
-                      <td className="px-4 py-2">{p.color}</td>
-                      <td className="px-4 py-2">{t.talle}</td>
-                      <td className="px-4 py-2">{t.cantidad}</td>
-                      <td className="px-4 py-2">${p.precio.toFixed(2)}</td>
-                      <td className="px-4 py-2">
-                        <button
-                          disabled={t.cantidad === 0}
-                          onClick={() => {
-                            onSeleccionarProducto(p, t)
-                            setSearchTerm("")
-                          }} 
-                          className="bg-black text-white px-3 py-1 rounded-lg text-sm hover:bg-gray-800 transition disabled:bg-gray-300 disabled:text-gray-600"
-                        >
-                          {t.cantidad > 0 ? "Agregar" : "Sin stock"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          )}
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+
+        {/* Filtros */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <input
+            type="text"
+            placeholder="Código"
+            value={codigoFiltro}
+            onChange={(e) => setCodigoFiltro(e.target.value)}
+            className="border p-1 text-sm w-full sm:w-1/3"
+          />
+          <input
+            type="text"
+            placeholder="Color"
+            value={colorFiltro}
+            onChange={(e) => setColorFiltro(e.target.value)}
+            className="border p-1 text-sm w-full sm:w-1/3"
+          />
+          <input
+            type="text"
+            placeholder="Nombre / Descripción"
+            value={nombreFiltro}
+            onChange={(e) => setNombreFiltro(e.target.value)}
+            className="border p-1 text-sm w-full sm:w-1/3"
+          />
+          <button
+            onClick={buscarProductos}
+            className="bg-blue-600 text-white px-3 py-1 text-sm rounded"
+          >
+            Buscar
+          </button>
+          <button
+            onClick={limpiarFiltros}
+            className="bg-gray-300 text-black px-3 py-1 text-sm rounded"
+          >
+            Limpiar
+          </button>
         </div>
 
-        {/* Botón cerrar inferior */}
-        <div className="mt-4 flex justify-end">
-          {/* <button
-            onClick={onClose}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-          >
-            Cerrar
-          </button> */}
+        {/* Tabla con scroll */}
+        <div className="overflow-y-auto max-h-[60vh] border rounded">
+          <table className="min-w-full text-xs">
+            <thead className="bg-gray-100 sticky top-0 z-10">
+              <tr>
+                <th className="border px-1 py-1 text-left">Código</th>
+                <th className="border px-1 py-1 text-left">Descripción</th>
+                <th className="border px-1 py-1 text-left">Color</th>
+                <th className="border px-1 py-1 text-right">Precio</th>
+                <th className="border px-1 py-1 text-left">Talle</th>
+                <th className="border px-1 py-1 text-left">Stock</th>
+                <th className="border px-1 py-1 text-left">Categoría</th>
+                <th className="border px-1 py-1 text-left">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productos.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="text-center p-4 text-gray-500">
+                    No hay resultados.
+                  </td>
+                </tr>
+              ) : (
+                productos.flatMap((prod) =>
+                  Array.isArray(prod.stock) && prod.stock.length > 0
+                    ? prod.stock.map((s, i) => (
+                        <tr key={`${prod._id}-${i}`}>
+                          <td className="border px-1 py-1">{prod.codigo}</td>
+                          <td className="border px-1 py-1">{prod.descripcion}</td>
+                          <td className="border px-1 py-1">{prod.color}</td>
+                          <td className="border px-1 py-1 text-right">
+                            ${prod.precio}
+                          </td>
+                          <td className="border px-1 py-1">{s.talle}</td>
+                          <td className="border px-1 py-1">{s.stock}</td>
+                          <td className="border px-1 py-1">{prod.categoria}</td>
+                          <td className="border px-1 py-1">
+                            <button
+                              onClick={() => {
+                                onSeleccionarProducto(prod, s);
+                                onClose();
+                              }}
+                              className="bg-green-600 text-white px-3 py-1 text-sm rounded"
+                            >
+                              Seleccionar
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    : [
+                        <tr key={prod._id}>
+                          <td className="border px-1 py-1">{prod.codigo}</td>
+                          <td className="border px-1 py-1">{prod.descripcion}</td>
+                          <td className="border px-1 py-1">{prod.color}</td>
+                          <td className="border px-1 py-1 text-right">
+                            ${prod.precio}
+                          </td>
+                          <td className="border px-1 py-1">—</td>
+                          <td className="border px-1 py-1">
+                            {prod.stock ?? "—"}
+                          </td>
+                          <td className="border px-1 py-1">{prod.categoria}</td>
+                          <td className="border px-1 py-1">
+                            <button
+                              onClick={() => {
+                                onSeleccionarProducto(prod, {});
+                                onClose();
+                              }}
+                              className="bg-green-600 text-white px-3 py-1 text-sm rounded"
+                            >
+                              Seleccionar
+                            </button>
+                          </td>
+                        </tr>,
+                      ]
+                )
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default BuscarModal;

@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useProductos } from "../../context/ProductoContext";
 
 export default function ListaProductos() {
-  const { productos } = useProductos();
+  const { productos, isLoading } = useProductos(); // Asegúrate de tener el estado isLoading en el contexto
   const [filtro, setFiltro] = useState("");
   const [orden, setOrden] = useState({ campo: null, asc: true });
 
@@ -49,57 +49,63 @@ export default function ListaProductos() {
         />
       </div>
 
-      <div className="overflow-y-auto max-h-[400px] rounded border border-gray-200">
-        <table className="w-full border-collapse text-sm">
-          <thead className="sticky top-0 bg-gray-100 shadow text-gray-700 z-10">
-            <tr>
-              <th
-                onClick={() => handleOrden("codigo")}
-                className="border-b px-4 py-2 text-left cursor-pointer select-none"
-              >
-                Código {orden.campo === "codigo" ? (orden.asc ? "▲" : "▼") : ""}
-              </th>
-              <th className="border-b px-4 py-2 text-left">Descripción</th>
-              <th className="border-b px-4 py-2 text-left">Color</th>
-              <th
-                onClick={() => handleOrden("precio")}
-                className="border-b px-4 py-2 text-left cursor-pointer select-none"
-              >
-                Precio {orden.campo === "precio" ? (orden.asc ? "▲" : "▼") : ""}
-              </th>
-              <th className="border-b px-4 py-2 text-left">Talles</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productosFiltrados.length > 0 ? (
-              productosFiltrados.map((producto) => (
-                <tr key={producto.codigo} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-2">{producto.codigo}</td>
-                  <td className="px-4 py-2">{producto.descripcion}</td>
-                  <td className="px-4 py-2">{producto.color}</td>
-                  <td className="px-4 py-2">${producto.precio.toFixed(2)}</td>
-                  <td className="px-4 py-2 space-y-1">
-                    {producto.talles.map((t) => (
-                      <div
-                        key={t.talle}
-                        className="bg-gray-100 rounded px-2 py-1 inline-block text-xs"
-                      >
-                        {t.talle} - {t.cantidad}u
-                      </div>
-                    ))}
+      {isLoading ? (
+        <div className="text-center py-4 text-gray-500">Cargando productos...</div>
+      ) : (
+        <div className="overflow-y-auto max-h-[400px] rounded border border-gray-200">
+          <table className="w-full border-collapse text-sm">
+            <thead className="sticky top-0 bg-gray-100 shadow text-gray-700 z-10">
+              <tr>
+                <th
+                  onClick={() => handleOrden("codigo")}
+                  className="border-b px-4 py-2 text-left cursor-pointer select-none"
+                  aria-label="Ordenar por código"
+                >
+                  Código {orden.campo === "codigo" ? (orden.asc ? "▲" : "▼") : ""}
+                </th>
+                <th className="border-b px-4 py-2 text-left">Descripción</th>
+                <th className="border-b px-4 py-2 text-left">Color</th>
+                <th
+                  onClick={() => handleOrden("precio")}
+                  className="border-b px-4 py-2 text-left cursor-pointer select-none"
+                  aria-label="Ordenar por precio"
+                >
+                  Precio {orden.campo === "precio" ? (orden.asc ? "▲" : "▼") : ""}
+                </th>
+                <th className="border-b px-4 py-2 text-left">Talles</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productosFiltrados.length > 0 ? (
+                productosFiltrados.map((producto) => (
+                  <tr key={producto.codigo} className="border-t hover:bg-gray-50">
+                    <td className="px-4 py-2">{producto.codigo}</td>
+                    <td className="px-4 py-2">{producto.descripcion}</td>
+                    <td className="px-4 py-2">{producto.color}</td>
+                    <td className="px-4 py-2">${producto.precio.toFixed(2)}</td>
+                    <td className="px-4 py-2 space-y-1">
+                      {producto.talles.map((t) => (
+                        <div
+                          key={t.talle}
+                          className="bg-gray-100 rounded px-2 py-1 inline-block text-xs"
+                        >
+                          {t.talle} - {t.cantidad}u
+                        </div>
+                      ))}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="text-center py-4 text-gray-500">
+                    No se encontraron productos
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" className="text-center py-4 text-gray-500">
-                  No se encontraron productos
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

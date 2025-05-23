@@ -1,46 +1,52 @@
 import { useState } from "react";
-import { mockProductos } from "../../utils/mockData";
+import axios from "../../api/axios";
 
-export default function EliminarProducto() {
+const EliminarProducto = () => {
   const [codigo, setCodigo] = useState("");
   const [producto, setProducto] = useState(null);
-  const [confirmado, setConfirmado] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
 
-  // Buscar el producto por código
-  const buscarProducto = () => {
-    const encontrado = mockProductos.find((p) => p.codigo === codigo);
-    if (encontrado) {
-      setProducto(encontrado);
-    } else {
-      alert("Producto no encontrado");
-      setProducto(null);
+  const buscarProducto = async () => {
+    try {
+      const { data } = await axios.get("/productos");
+      const encontrado = data.find((p) => p.codigo === codigo);
+      if (encontrado) {
+        setProducto(encontrado);
+        setError("");
+      } else {
+        setProducto(null);
+        setError("Producto no encontrado");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Error al buscar el producto");
     }
   };
 
-  // Eliminar el producto
-  const eliminar = () => {
-    console.log("Producto eliminado:", producto);
-    alert("Producto eliminado (ver consola).");
+  const eliminarProducto = async () => {
+    if (!producto) return;
 
-    // Aquí puedes agregar la lógica para eliminar el producto
-    // Ejemplo: actualizando el mock o haciendo una solicitud a tu backend
-
-    setProducto(null); // Limpiar el producto
-    setCodigo(""); // Limpiar el campo de código
-    setConfirmado(false); // Resetear el estado de confirmación
+    try {
+      await axios.delete(`/productos/${producto._id}`);
+      setMensaje("Producto eliminado correctamente");
+      setProducto(null);
+      setError("");
+    } catch (err) {
+      console.error(err);
+      setError("Error al eliminar el producto");
+    }
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md max-w-xl mx-auto">
-      <h2 className="text-xl font-semibold mb-4">Eliminar Producto</h2>
-
-      <div className="flex gap-2 mb-4">
+    <div className="space-y-4">
+      <div className="flex gap-2">
         <input
           type="text"
           placeholder="Código del producto"
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
-          className="border p-2 flex-1 rounded"
+          className="border p-2 w-full"
         />
         <button
           onClick={buscarProducto}
@@ -50,31 +56,26 @@ export default function EliminarProducto() {
         </button>
       </div>
 
+      {error && <div className="text-red-600">{error}</div>}
+      {mensaje && <div className="text-green-600">{mensaje}</div>}
+
       {producto && (
-        <div className="bg-red-50 border border-red-200 p-4 rounded mb-4">
+        <div className="bg-gray-100 p-4 rounded">
+          <h3 className="font-medium mb-2">¿Eliminar el siguiente producto?</h3>
           <p><strong>Descripción:</strong> {producto.descripcion}</p>
           <p><strong>Color:</strong> {producto.color}</p>
-          <p><strong>Precio:</strong> ${producto.precio.toFixed(2)}</p>
-          <p><strong>Código:</strong> {producto.codigo}</p>
-          <p><strong>Talles:</strong> {producto.talles.map((t) => `${t.talle} (${t.cantidad})`).join(", ")}</p>
+          <p><strong>Precio:</strong> ${producto.precio}</p>
 
-          {!confirmado ? (
-            <button
-              onClick={() => setConfirmado(true)}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 mt-4 rounded"
-            >
-              Confirmar Eliminación
-            </button>
-          ) : (
-            <button
-              onClick={eliminar}
-              className="bg-red-800 hover:bg-red-900 text-white px-4 py-2 mt-4 rounded"
-            >
-              Eliminar Definitivamente
-            </button>
-          )}
+          <button
+            onClick={eliminarProducto}
+            className="mt-4 bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Confirmar Eliminación
+          </button>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default EliminarProducto;

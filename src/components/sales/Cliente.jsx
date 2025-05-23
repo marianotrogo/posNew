@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { mockClientes } from "../../utils/mockClientes";
 
 export default function Cliente({ onChange }) {
   const [editable, setEditable] = useState(false);
@@ -25,26 +24,30 @@ export default function Cliente({ onChange }) {
         domicilio: "",
         contacto: "",
         mail: "",
+        _id: null, // esto ayuda al enviar a backend
       };
       setCliente(cf);
       onChange && onChange(cf);
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value } = e.target;
     const updated = { ...cliente, [name]: value };
+    setCliente(updated);
+    onChange && onChange(updated);
 
     if (name === "nombre" && editable) {
       setMostrarSugerencias(true);
-      const sugeridos = mockClientes.filter((c) =>
-        c.nombre.toLowerCase().includes(value.toLowerCase())
-      );
-      setSugerencias(sugeridos);
+      try {
+        const res = await fetch(`/api/clientes?nombre=${value}`);
+        const data = await res.json();
+        setSugerencias(data);
+      } catch (err) {
+        console.error("Error al buscar clientes:", err);
+        setSugerencias([]);
+      }
     }
-
-    setCliente(updated);
-    onChange && onChange(updated);
   };
 
   const handleSeleccionSugerido = (clienteSeleccionado) => {
@@ -86,7 +89,7 @@ export default function Cliente({ onChange }) {
             <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-xl shadow-lg max-h-48 overflow-y-auto">
               {sugerencias.map((s, i) => (
                 <li
-                  key={i}
+                  key={s._id}
                   onClick={() => handleSeleccionSugerido(s)}
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                 >
@@ -145,4 +148,3 @@ export default function Cliente({ onChange }) {
     </div>
   );
 }
-
